@@ -32,7 +32,7 @@ def pipeline_yolo(img):
 if __name__ == "__main__":
     # YOLO Pipeline
     video_output = 'sample.mp4'
-    clip1 = VideoFileClip("dashcamc2.mp4").subclip(38,40)
+    clip1 = VideoFileClip("dashsample.mp4").subclip(0,15)
     clip = clip1.fl_image(pipeline_yolo)
     clip.write_videofile(video_output, audio=False)
 

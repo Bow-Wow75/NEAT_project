@@ -187,6 +187,13 @@ def draw_results(img, yolo, fps):
 
 yolo = yolo_tf()
 
+def iou(box1,box2):
+    tb = min(box1[0]+0.5*box1[2],box2[0]+0.5*box2[2])-max(box1[0]-0.5*box1[2],box2[0]-0.5*box2[2])
+    lr = min(box1[1]+0.5*box1[3],box2[1]+0.5*box2[3])-max(box1[1]-0.5*box1[3],box2[1]-0.5*box2[3])
+    if tb < 0 or lr < 0 : intersection = 0
+    else : intersection =  tb*lr
+    return intersection / (box1[2]*box1[3] + box2[2]*box2[3] - intersection)
+
 def vehicle_detection_yolo(image):
     # set the timer
     start = timer()
