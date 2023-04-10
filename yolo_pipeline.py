@@ -1,3 +1,4 @@
+import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import cv2
@@ -10,7 +11,9 @@ class yolo_tf:
 
     weights_file = 'weights/YOLO_small.ckpt'
     alpha = 0.1
-    threshold = 0.3
+    #threshold = 0.3
+    threshold = 0.25
+
     iou_threshold = 0.5
 
     result_list = None
@@ -191,10 +194,12 @@ def draw_results(img, yolo, fps):
     #    h = int(results[0][4])//2)
     a = int(width // 2) 
     b = int(height// 2) 
-    left = int(width - 500)
-    right = int(width-500)
-    up = int(height - 700)
-    down = int(height - 700)
+    #print("width ", width, (500/width*100), (700/height*100))
+    left = int(width - (width * 0.75 ))
+    right = int(width-(width * 0.75 ))
+    up = int(height - (height* 0.7))
+    down = int(height - (height* 0.7))
+
 
     window_list = []
     for i in range(len(results)):
@@ -212,24 +217,40 @@ def draw_results(img, yolo, fps):
             area_p = abs(((x+w)-(x-w))*((y+h)-(y-h))) #w * h
 
             #cv2.putText(img_cp,str(area),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
-            print("area",area_p)
+            #print("area",area_p)
 
             cv2.rectangle(img_cp, (a-(left), b+(down)), (a+(right),b-(up)), (0,100,0), thickness)
             area_r = left * up
-            print("area r", area_r)
+            #print("area r", area_r)
             #boxA =[0, 0, 10, 10]
             #boxB= [1, 1, 11, 11]
             boxA = [a-(left), b-(up) , a+(right),b+(down)]
             #box B [201, 489, 335, 885]
             boxB = [x-w,y-h, x+w, y+h]
             #boxB = [x-w,y-h,x+w,y+h]
-            print("box A", boxA)
-            print("box B", boxB)
+            #print("box A", boxA)
+            #print("box B", boxB)
             inter_area = bb_intersection_over_union(boxA, boxB)
             if area_p < area_r:
-                percent = inter_area/area_p
-                print("intercect", inter_area)
-                print("percent", percent)
+                percent_not_intersect = 100 - (inter_area/area_p)
+                #print("intercect", inter_area)
+                #print("percent", percent_not_intersect)
+                #if percent_not_intersect < 20 and percent_not_intersect > 1:
+                if (100 - percent_not_intersect) > 0.5:
+                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
+                    #cv2.rectangle(img_cp,(x-w,y-h-40),(x-w+15,y-h-20),(125,125,125),-1)
+                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
+                    cv2.putText(img_cp,"STOP PEDESTRIAN IS ON THE WAY!",(x-w+15,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+            if area_r < area_p :
+                percent_not_intersect = 100 - (inter_area/area_r)
+                #print("intercect", inter_area)
+                #print("percent", percent_not_intersect)
+                #if percent_not_intersect < 20 and percent_not_intersect > 1:
+                if (100 - percent_not_intersect) > 0.5:
+                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
+                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
+                    cv2.putText(img_cp,"STOP PEDESTRIAN IS ON THE WAY!",(x-w+6,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+
 
         # cv2.putText(img_cp,results[i][0] + ' : %.2f' % results[i][5],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
         cv2.putText(img_cp,results[i][0],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)

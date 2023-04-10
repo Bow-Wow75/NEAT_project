@@ -33,8 +33,8 @@ def pipeline_yolo(img):
 
 if __name__ == "__main__":
     # YOLO Pipeline
-    video_output = 'sample3.mp4'
-    clip1 = VideoFileClip("ped_new_3.MP4").subclip(0,3)
+    video_output = 'ped_new_2_out.mp4'
+    clip1 = VideoFileClip("ped_new_2.MP4").subclip(0,3)
     clip = clip1.fl_image(pipeline_yolo)
     clip.write_videofile(video_output, audio=False)
 
