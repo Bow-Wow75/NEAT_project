@@ -1,3 +1,4 @@
+import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import cv2
@@ -11,7 +12,9 @@ class yolo_tf:
 
     weights_file = 'weights/YOLO_small.ckpt'
     alpha = 0.1
-    threshold = 0.3
+    #threshold = 0.3
+    threshold = 0.25
+
     iou_threshold = 0.5
 
     result_list = None
@@ -169,6 +172,36 @@ def draw_results(img, yolo, fps):
     img_cp = img.copy()
     results = yolo.result_list
 
+    #A
+    start_point_ = (163, 824)#(100,100)
+    end_point_ = (511, 192)#(500,500)
+    color = (139,0,0)
+    thickness = 4
+    
+    #B
+    color_y = (255, 255, 0)
+
+    start_point = (201, 489)#(100,100)
+    end_point = (335, 885)#(500,500)
+    #
+    #box A [163, 824, 511, 192]
+    #box B [201, 489, 335, 885]
+
+    print("len",len(results))
+    height, width, channels = img_cp.shape
+    #print(x = int(results[0][1]),
+    #    y = int(results[0][2]),
+    #    w = int(results[0][3])//2,
+    #    h = int(results[0][4])//2)
+    a = int(width // 2) 
+    b = int(height// 2) 
+    #print("width ", width, (500/width*100), (700/height*100))
+    left = int(width - (width * 0.75 ))
+    right = int(width-(width * 0.75 ))
+    up = int(height - (height* 0.7))
+    down = int(height - (height* 0.7))
+
+
     window_list = []
     for i in range(len(results)):
         x = int(results[i][1])
@@ -177,12 +210,58 @@ def draw_results(img, yolo, fps):
         h = int(results[i][4])//2
         cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(0,0,255),4)
         cv2.rectangle(img_cp,(x-w,y-h-20),(x+w,y-h),(125,125,125),-1)
+
+        #cv2.rectangle(img_cp, start_point_, end_point_, color, thickness)
+        #cv2.rectangle(img_cp, start_point, end_point, color_y, thickness)
+        if results[i][0]== "person":
+
+            area_p = abs(((x+w)-(x-w))*((y+h)-(y-h))) #w * h
+
+            #cv2.putText(img_cp,str(area),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
+            #print("area",area_p)
+
+            cv2.rectangle(img_cp, (a-(left), b+(down)), (a+(right),b-(up)), (0,100,0), thickness)
+            area_r = left * up
+            #print("area r", area_r)
+            #boxA =[0, 0, 10, 10]
+            #boxB= [1, 1, 11, 11]
+            boxA = [a-(left), b-(up) , a+(right),b+(down)]
+            #box B [201, 489, 335, 885]
+            boxB = [x-w,y-h, x+w, y+h]
+            #boxB = [x-w,y-h,x+w,y+h]
+            #print("box A", boxA)
+            #print("box B", boxB)
+            inter_area = bb_intersection_over_union(boxA, boxB)
+            if area_p < area_r:
+                percent_not_intersect = 100 - (inter_area/area_p)
+                #print("intercect", inter_area)
+                #print("percent", percent_not_intersect)
+                #if percent_not_intersect < 20 and percent_not_intersect > 1:
+                if (100 - percent_not_intersect) > 0.5:
+                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
+                    #cv2.rectangle(img_cp,(x-w,y-h-40),(x-w+15,y-h-20),(125,125,125),-1)
+                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
+                    cv2.putText(img_cp,"STOP PEDESTRIAN IS ON THE WAY!",(x-w+15,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+            if area_r < area_p :
+                percent_not_intersect = 100 - (inter_area/area_r)
+                #print("intercect", inter_area)
+                #print("percent", percent_not_intersect)
+                #if percent_not_intersect < 20 and percent_not_intersect > 1:
+                if (100 - percent_not_intersect) > 0.5:
+                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
+                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
+                    cv2.putText(img_cp,"STOP PEDESTRIAN IS ON THE WAY!",(x-w+6,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+
+
+        # cv2.putText(img_cp,results[i][0] + ' : %.2f' % results[i][5],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
         cv2.putText(img_cp,results[i][0],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
         if results[i][0] == "car" or results[i][0] == "bus":
             window_list.append(((x-w,y-h),(x+w,y+h)))
             
     #display the brake indicator
     draw_indicator(img_cp, img, window_list)
+
+        
 
     return img_cp
 
@@ -206,5 +285,35 @@ def vehicle_detection_yolo(image):
     fps = 1.0 / (timer() - start)
     # draw visualization on frame
     yolo_result = draw_results(image, yolo, fps)
+    #print("y", yolo)
+    #print("r",yolo_result)
 
     return yolo_result
+
+
+#find intercection
+def bb_intersection_over_union(boxA, boxB):
+    # determine the (x, y)-coordinates of the intersection rectangle
+    #example 
+    # Pointing out a wrong IoU implementation in https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+    #boxA = [0., 0., 10., 10.]
+    #boxB = [1., 1., 11., 11.]
+   	# determine the (x, y)-coordinates of the intersection rectangle
+	xA = max(boxA[0], boxB[0])
+	yA = max(boxA[1], boxB[1])
+	xB = min(boxA[2], boxB[2])
+	yB = min(boxA[3], boxB[3])
+	# compute the area of intersection rectangle
+	interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+	# compute the area of both the prediction and ground-truth
+	# rectangles
+	boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+	boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+	# compute the intersection over union by taking the intersection
+	# area and dividing it by the sum of prediction + ground-truth
+	# areas - the interesection area
+    #interArea is just area of the overlap
+	iou = interArea #/ float(boxAArea + boxBArea - interArea)
+	# return the intersection over union value
+	return iou
+

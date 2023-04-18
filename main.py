@@ -24,15 +24,17 @@ def pipeline_yolo(img):
     mtx, dist = load_calibration(calib_file)
     img_undist_ = cv2.undistort(img, mtx, dist, None, mtx)
     img_undist = cv2.resize(img_undist_, (0,0), fx=1/input_scale, fy=1/input_scale)
+    #print(img_undist)
     output = vehicle_detection_yolo(img_undist)
+    
 
     return output
 
 
 if __name__ == "__main__":
     # YOLO Pipeline
-    video_output = 'sample.mp4'
-    clip1 = VideoFileClip("dashsample.mp4").subclip(0,15)
+    video_output = 'ped_new_2_out.mp4'
+    clip1 = VideoFileClip("ped_new_2.MP4").subclip(0,3)
     clip = clip1.fl_image(pipeline_yolo)
     clip.write_videofile(video_output, audio=False)
 
