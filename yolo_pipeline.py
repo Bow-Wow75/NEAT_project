@@ -4,6 +4,7 @@ tf.disable_v2_behavior()
 import cv2
 from timeit import default_timer as timer
 import numpy as np
+from visuals import *
 
 class yolo_tf:
     w_img = 1280
@@ -256,6 +257,9 @@ def draw_results(img, yolo, fps):
         cv2.putText(img_cp,results[i][0],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
         if results[i][0] == "car" or results[i][0] == "bus":
             window_list.append(((x-w,y-h),(x+w,y+h)))
+            
+    #display the brake indicator
+    draw_indicator(img_cp, img, window_list)
 
         
 
