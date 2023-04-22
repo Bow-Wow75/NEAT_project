@@ -196,8 +196,8 @@ def draw_results(img, yolo, fps):
     a = int(width // 2) 
     b = int(height// 2) 
     #print("width ", width, (500/width*100), (700/height*100))
-    left = int(width - (width * 0.75 ))
-    right = int(width-(width * 0.75 ))
+    left = int(width - (width * 0.85 ))
+    right = int(width-(width * 0.85 ))
     up = int(height - (height* 0.7))
     down = int(height - (height* 0.7))
 
@@ -256,12 +256,26 @@ def draw_results(img, yolo, fps):
         # cv2.putText(img_cp,results[i][0] + ' : %.2f' % results[i][5],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
         cv2.putText(img_cp,results[i][0],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
         if results[i][0] == "car" or results[i][0] == "bus":
-            window_list.append(((x-w,y-h),(x+w,y+h)))
+            #window_list.append(((x-w,y-h),(x+w,y+h)))
+            area_p = abs(((x+w)-(x-w))*((y+h)-(y-h))) #w * h
+            cv2.rectangle(img_cp, (a-(left), b+(down)), (a+(right),b-(up)), (0,100,0), thickness)
+            area_r = left * up
             
-    #display the brake indicator
-    draw_indicator(img_cp, img, window_list)
-
-        
+            boxA = [a-(left), b-(up) , a+(right),b+(down)]
+            boxB = [x-w,y-h, x+w, y+h]
+            inter_area = bb_intersection_over_union(boxA, boxB)
+            if area_p < area_r:
+                percent_not_intersect = 100 - (inter_area/area_p)
+                if (100 - percent_not_intersect) > 0.5:
+                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
+                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
+                    cv2.putText(img_cp,"STOP - Vehicle!",(x-w+15,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+            if area_r < area_p :
+                percent_not_intersect = 100 - (inter_area/area_r)
+                if (100 - percent_not_intersect) > 0.5:
+                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
+                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
+                    cv2.putText(img_cp,"STOP - Vehicle!",(x-w+6,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
 
     return img_cp
 
