@@ -208,78 +208,63 @@ def draw_results(img, yolo, fps):
         y = int(results[i][2])
         w = int(results[i][3])//2
         h = int(results[i][4])//2
+
         cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(0,0,255),4)
-        cv2.rectangle(img_cp,(x-w,y-h-20),(x+w,y-h),(125,125,125),-1)
+        cv2.rectangle(img_cp,(x-w,y-h-20),(x+w,y-h),(255,0,0),-1)
 
         #cv2.rectangle(img_cp, start_point_, end_point_, color, thickness)
         #cv2.rectangle(img_cp, start_point, end_point, color_y, thickness)
-        if results[i][0]== "person":
 
-            area_p = abs(((x+w)-(x-w))*((y+h)-(y-h))) #w * h
+        classname = results[i][0]
+        confidence = results[i][-1]
+        print(classname, confidence)
+        if classname.lower() not in ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair",
+            "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant",
+            "sheep", "sofa", "train","tvmonitor"]:
+            cv2.imshow("==", img_cp)
+            cv2.waitKey(1)
+            continue
+        
+        # uncomment the next part if ur network is performing good (I can explain more to @ Anna and Erik)
+        # CONF_THRESHOLD = 0.5
+        # if confidence < CONF_THRESHOLD:
+        #     continue
+        # This is the collision logic @ Anna and Erik 
+        # not that w here is 0.5* width of the detected object, not the width
+        # I also added confidence score and distant to tell the car warn the drive to stop for better
+        # Visualization 
 
-            #cv2.putText(img_cp,str(area),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
-            #print("area",area_p)
+        mid_x = (x + 0) / width
+        mid_y = (y + 0) / height
+        ww = 2*w/width
+        apx_distance = round(((1 - (ww))**4),1)
 
-            cv2.rectangle(img_cp, (a-(left), b+(down)), (a+(right),b-(up)), (0,100,0), thickness)
-            area_r = left * up
-            #print("area r", area_r)
-            #boxA =[0, 0, 10, 10]
-            #boxB= [1, 1, 11, 11]
-            boxA = [a-(left), b-(up) , a+(right),b+(down)]
-            #box B [201, 489, 335, 885]
-            boxB = [x-w,y-h, x+w, y+h]
-            #boxB = [x-w,y-h,x+w,y+h]
-            #print("box A", boxA)
-            #print("box B", boxB)
-            inter_area = bb_intersection_over_union(boxA, boxB)
-            if area_p < area_r:
-                percent_not_intersect = 100 - (inter_area/area_p)
-                #print("intercect", inter_area)
-                #print("percent", percent_not_intersect)
-                #if percent_not_intersect < 20 and percent_not_intersect > 1:
-                if (100 - percent_not_intersect) > 0.5:
-                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
-                    #cv2.rectangle(img_cp,(x-w,y-h-40),(x-w+15,y-h-20),(125,125,125),-1)
-                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
-                    cv2.putText(img_cp,"STOP PEDESTRIAN IS ON THE WAY!",(x-w+15,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
-            if area_r < area_p :
-                percent_not_intersect = 100 - (inter_area/area_r)
-                #print("intercect", inter_area)
-                #print("percent", percent_not_intersect)
-                #if percent_not_intersect < 20 and percent_not_intersect > 1:
-                if (100 - percent_not_intersect) > 0.5:
-                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
-                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
-                    cv2.putText(img_cp,"STOP PEDESTRIAN IS ON THE WAY!",(x-w+6,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+        cv2.putText(img_cp, '{}'.format(apx_distance), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
 
+        print('distance =', apx_distance)
 
-        # cv2.putText(img_cp,results[i][0] + ' : %.2f' % results[i][5],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
-        cv2.putText(img_cp,results[i][0],(x-w+5,y-h-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,0),1)
-        if results[i][0] == "car" or results[i][0] == "bus":
-            #window_list.append(((x-w,y-h),(x+w,y+h)))
-            area_p = abs(((x+w)-(x-w))*((y+h)-(y-h))) #w * h
-            cv2.rectangle(img_cp, (a-(left), b+(down)), (a+(right),b-(up)), (0,100,0), thickness)
-            area_r = left * up
-            
-            boxA = [a-(left), b-(up) , a+(right),b+(down)]
-            boxB = [x-w,y-h, x+w, y+h]
-            inter_area = bb_intersection_over_union(boxA, boxB)
-            if area_p < area_r:
-                percent_not_intersect = 100 - (inter_area/area_p)
-                if (100 - percent_not_intersect) > 0.5:
-                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
-                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
-                    cv2.putText(img_cp,"STOP - Vehicle!",(x-w+15,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
-            if area_r < area_p :
-                percent_not_intersect = 100 - (inter_area/area_r)
-                if (100 - percent_not_intersect) > 0.5:
-                    cv2.rectangle(img_cp,(x-w,y-h),(x+w,y+h),(255,0,0),5)
-                    cv2.rectangle(img_cp,(x-w,y-h-40),(x+350,y-h),(255,0,0),-1)
-                    cv2.putText(img_cp,"STOP - Vehicle!",(x-w+6,y-h-20),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+        #@ Anna I modified your warning logic here ---Lol I did not take it out
+        warn = False
+        if apx_distance <= 0.5:
+            if mid_x >= 0.3 and mid_x <= 0.7: 
+                #  cv2.putText(img_cp, 'WARNING!!!',  (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 3)
+                warn = True
 
+        # @ Ann you can Play around with the Rbg colors here if you need better colors for bounding
+        # boxes and distance and confidence score
+        if warn:
+            cv2.putText(img_cp,f"STOP {classname.upper()} IS ON THE WAY!",(x-w+15,y-h),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+        else:
+            cv2.putText(img_cp,f"{classname} {round(confidence,1)}",(x-w+15,y-h),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),1)
+
+        # cv2.rectangle(img_cp, (x,y),(x+w,y+h),(255,0,0),5)
+
+       
+    cv2.rectangle(img_cp, (a-(left), b+(down)), (a+(right),b-(up)), (0,100,0), thickness)
+
+    # cv2.imshow("==", img_cp)
+    # cv2.waitKey(1)
     return img_cp
-
-
 
 yolo = yolo_tf()
 
@@ -307,12 +292,7 @@ def vehicle_detection_yolo(image):
 
 #find intercection
 def bb_intersection_over_union(boxA, boxB):
-    # determine the (x, y)-coordinates of the intersection rectangle
-    #example 
-    # Pointing out a wrong IoU implementation in https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
-    #boxA = [0., 0., 10., 10.]
-    #boxB = [1., 1., 11., 11.]
-   	# determine the (x, y)-coordinates of the intersection rectangle
+	# determine the (x, y)-coordinates of the intersection rectangle
 	xA = max(boxA[0], boxB[0])
 	yA = max(boxA[1], boxB[1])
 	xB = min(boxA[2], boxB[2])
@@ -326,8 +306,7 @@ def bb_intersection_over_union(boxA, boxB):
 	# compute the intersection over union by taking the intersection
 	# area and dividing it by the sum of prediction + ground-truth
 	# areas - the interesection area
-    #interArea is just area of the overlap
-	iou = interArea #/ float(boxAArea + boxBArea - interArea)
+	iou = interArea / float(boxAArea + boxBArea - interArea)
 	# return the intersection over union value
 	return iou
 
