@@ -245,6 +245,7 @@ def draw_results(img, yolo, fps):
 
         #@ Anna I modified your warning logic here ---Lol I did not take it out
         warn = False
+	#Referenced from https://pythonprogramming.net/introduction-self-driving-autonomous-cars-carla-python/
         if apx_distance <= 0.5:
             if mid_x >= 0.3 and mid_x <= 0.7: 
                 #  cv2.putText(img_cp, 'WARNING!!!',  (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 3)
